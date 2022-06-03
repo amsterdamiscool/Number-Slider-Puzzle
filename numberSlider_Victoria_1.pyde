@@ -122,3 +122,104 @@ def setup():
                  [ tile19, tile20, tile21, tile22, tile23, tile24 ],
                  [ tile25, tile26, tile27, tile28, tile29, tile30 ],
                  [ tile31, tile32, tile33, tile34, tile35,   None ] ]
+        
+def draw():
+    global tileImages, tileGoal, procedure, goldImage, goldNum, gameDetails, levelNum, moves, ruleFlag, gameBoard, tileCoordinates
+    global display, ruleBoard, audio, congrats
+    # print(mouseX,mouseY)
+    # print(procedure)
+    
+    # checking if goal reached
+    if tileImages == tileGoal:
+        procedure = procedure + 1
+        # print("for reaching goal")
+        
+    # background images (some are always displayed and others cover over if propriates)
+    if procedure % 1 == 0: # display following images if not on welcome screen
+        background(0)
+        image(goldImage,345,35)
+        text(str(goldNum),600,117)
+        image(gameDetails,0,827)
+        text("Level: %3d     Moves: %5d"%(levelNum,moves),600,880)
+        image(ruleFlag,75,90)
+        image(gameFlag,13,90)
+        image(gameBoard,0,167)
+        for a in range(6):
+            for b in range(6):
+                if tileImages[a][b] != None:
+                    image(tileImages[a][b],tileCoordinates[a][b][0],tileCoordinates[a][b][1])
+    if procedure % 2 == 0: # cover gameBoard with ruleBoard if user chooses to read rules
+        if display == False:
+            image(ruleFlag,75,90)
+            image(ruleBoard,0,167)
+            
+    elif procedure % 2 == 1: # if goal achieved
+        clapSound = audio.loadFile("applause.mp3") # clapping sound
+        clapSound.play() # play clapping sound
+        image(congrats,0,0) # cover gameBoard with congrats screen 
+        textAlign(CENTER)
+        if moves <= 10*levelNum: ################################################# Is this a good scoring system? #################################################
+            levelNum = levelNum + 1 ############################################## Is this a good scoring system? #################################################
+            goldNum = goldNum + 5*(10*levelNum-moves) ############################ Is this a good scoring system? #################################################
+            text("Gold +"+str(5*(10*levelNum-moves))+"   Level +1",325,520) ###### Is this a good scoring system? #################################################
+        else: #################################################################### Is this a good scoring system? #################################################
+            goldNum = goldNum + 5 ################################################ Is this a good scoring system? #################################################
+            text("Gold + 5",325,520) ############################################# Is this a good scoring system? #################################################
+        rememberMe() # save level and gold information if a game is completed
+        textAlign(RIGHT)
+        noLoop() # NO LOOP (THE TABLET IS PRESENTLY PERFECT SO LOOP WOULD ADD ONE TO VARIABLE PROCEDURE IN EVERY SINGLE FRAME AND MAKE THINGS OUT OF CONTROL)
+
+def keyReleased():
+    global audio, procedure, display, tileImages, moves
+    slideSound = audio.loadFile("slide.mp3")
+    
+    if procedure % 2 == 0 and display == True: # when playing game (not reading rules nor celebrating with congrats screen)
+        if key == 'W' or key == 'w' or keyCode == UP: # user wants to move a tile up towards the blank space
+            blank = blankFinder() # first find the blank
+            if blank[0] != 5: # if it is not at bottom row
+                tileImages[blank[0]][blank[1]], tileImages[blank[0]+1][blank[1]] = tileImages[blank[0]+1][blank[1]], None # exchange coordinates (move tile)
+                moves = moves + 1 # this counts as a move
+                slideSound.play() # play slide sound
+        elif key == 'A' or key == 'a' or keyCode == LEFT: # user wants to move a tile left towards the blank space
+            blank = blankFinder() # first find the blank
+            if blank[1] != 5: # if it is not at right-most column
+                tileImages[blank[0]][blank[1]], tileImages[blank[0]][blank[1]+1] = tileImages[blank[0]][blank[1]+1], None # exchange coordinates (move tile)
+                moves = moves + 1 # this counts as a move
+                slideSound.play() # play slide sound
+        elif key == 'S' or key == 's' or keyCode == DOWN: # user wants to move a tile down towards the blank space
+            blank = blankFinder() # first find the blank
+            if blank[0] != 0: # if it is not at top row
+                tileImages[blank[0]][blank[1]], tileImages[blank[0]-1][blank[1]] = tileImages[blank[0]-1][blank[1]], None # exchange coordinates (move tile)
+                moves = moves + 1 # this counts as a move
+                slideSound.play() # play slide sound
+        elif key == 'D' or key == 'd' or keyCode == RIGHT: # user wants to move a tile right towards the blank space
+            blank = blankFinder() # first find the blank
+            if blank[1] != 0: # if it is not at left-most column
+                tileImages[blank[0]][blank[1]], tileImages[blank[0]][blank[1]-1] = tileImages[blank[0]][blank[1]-1], None # exchange coordinates (move tile)
+                moves = moves + 1 # this counts as a move
+                slideSound.play() # play slide sound
+                
+    elif procedure % 2 == 1: # when celebrating with congrats screen any key pressed starts a new game
+        slideSound.play() # play slide sound when creating new puzzle
+        tileImages = troubleMaker() # create new puzzle
+        moves = 0 # reset moves
+        procedure = procedure + 1 # and go on to next game
+        # print("for next level")
+        loop()
+        
+    elif procedure == 0.5: # in welcome screen any key pressed starts the first game.
+        procedure = 2 # go on to first game
+        slideSound.play() # pretend that we are creating the new puzzle now so there are sliding sounds
+
+def mouseReleased():
+    global audio, procedure, display
+    clickSound = audio.loadFile("click.mp3")
+    if procedure % 2 == 0: # clicking the mouse is only meaningful during game time (not during celebrating time)
+        if mouseX > 14 and mouseX < 166 and mouseY > 90 and mouseY < 166: # user can click on gameFlag to play game
+            display = True
+            clickSound.play()
+        elif mouseX > 174 and mouseX < 326 and mouseY > 90 and mouseY < 166: # user can click on ruleFlag to read rules
+            display = False
+            clickSound.play()
+
+# 225 = 15 x 15
